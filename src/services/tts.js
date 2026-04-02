@@ -1,7 +1,10 @@
 import { getApiKey, getFishApiKey } from './apiKey';
 
 const OPENAI_TTS_URL = 'https://api.openai.com/v1/audio/speech';
-const FISH_TTS_URL = 'https://api.fish.audio/v1/tts';
+// In dev, Vite proxy handles CORS. In production (GitHub Pages), use a CORS proxy.
+const FISH_TTS_URL = import.meta.env.DEV
+  ? '/fish-proxy/v1/tts'
+  : 'https://fish-proxy.arthurbpinho.workers.dev/v1/tts';
 const MAX_CHARS = 4000;
 
 function cleanText(text) {
