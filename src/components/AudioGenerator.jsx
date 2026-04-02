@@ -11,6 +11,16 @@ export default function AudioGenerator({ content }) {
   const [error, setError] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [usedEngine, setUsedEngine] = useState(null);
+  const FISH_VOICES = [
+    { id: '', label: 'Voz padrão Fish' },
+    { id: '4744963f03b24efeb8e29b86aca419a0', label: 'Jair Bolsonaro' },
+    { id: '102bccca7dc64b6b8f8494c199c5d153', label: 'Capitão Nascimento' },
+    { id: '0889ee96fd82421b8ad9e126c4d73312', label: 'Iberê (Manual do Mundo)' },
+    { id: 'd339e19362fc42dc8e3f4a6be653ff83', label: 'Naruto' },
+    { id: 'dd4f0d11604541689cbb6c69de8067d9', label: 'Goku' },
+    { id: '0be16728414f4400bc287f13fea51eed', label: 'Lula' },
+  ];
+
   const [fishVoiceId, setFishVoiceId] = useState('');
   const audioRef = useRef(null);
 
@@ -116,27 +126,28 @@ export default function AudioGenerator({ content }) {
         </p>
       </div>
 
-      {/* Fish Voice ID */}
+      {/* Fish Voice Selector */}
       {fishAvailable && (
         <div className="bg-allos-900/40 border border-allos-800/40 rounded-xl p-4">
-          <label className="flex items-center gap-2 text-xs font-semibold text-gold-400 uppercase tracking-wider mb-2">
+          <label className="flex items-center gap-2 text-xs font-semibold text-gold-400 uppercase tracking-wider mb-3">
             <Fish className="w-3.5 h-3.5" />
-            Voz do Fish Audio (opcional)
+            Voz do Fish Audio
           </label>
-          <input
-            type="text"
-            value={fishVoiceId}
-            onChange={(e) => setFishVoiceId(e.target.value)}
-            placeholder="Cole o ID da voz (ex: 7f92f8afb8ec43bf81429cc1c9199cb1)"
-            className="w-full bg-allos-900/60 border border-allos-700/30 rounded-lg px-3 py-2 text-cream placeholder-cream-muted/30 focus:outline-none focus:ring-1 focus:ring-gold-500/30 text-xs font-mono"
-          />
-          <p className="text-[10px] text-cream-muted/40 mt-1.5 leading-relaxed">
-            Acesse{' '}
-            <a href="https://fish.audio" target="_blank" rel="noopener noreferrer" className="text-gold-400/70 underline">
-              fish.audio
-            </a>
-            , escolha uma voz e copie o ID da URL. Deixe vazio para usar a voz padrão.
-          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {FISH_VOICES.map((voice) => (
+              <button
+                key={voice.id}
+                onClick={() => setFishVoiceId(voice.id)}
+                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                  fishVoiceId === voice.id
+                    ? 'bg-gold-500/20 border-gold-500/50 text-gold-300'
+                    : 'bg-allos-900/50 border-allos-700/30 text-cream-muted hover:border-gold-500/30 hover:text-cream-dim'
+                }`}
+              >
+                {voice.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -188,7 +199,7 @@ export default function AudioGenerator({ content }) {
           </span>
           <span className={`text-[10px] font-normal ${fishAvailable ? 'text-allos-900/60' : 'text-cream-muted/50'}`}>
             {fishAvailable
-              ? fishVoiceId ? 'Voz personalizada' : 'Speech 1.5 — Voz padrão'
+              ? `Speech 1.5 — ${FISH_VOICES.find(v => v.id === fishVoiceId)?.label || 'Voz padrão'}`
               : 'Requer chave Fish Audio'}
           </span>
         </button>
