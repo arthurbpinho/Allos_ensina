@@ -1,13 +1,16 @@
 import { useState, useRef } from 'react';
-import { Mic, Download, Play, Pause, Loader2, Video, Film } from 'lucide-react';
-import { generateNarration } from '../services/tts';
+import { Mic, Download, Play, Pause, Loader2, Video, Film, Fish, Sparkles } from 'lucide-react';
+import { generateNarrationOpenAI, generateNarrationFish } from '../services/tts';
+import { hasHfApiKey } from '../services/apiKey';
 
 export default function AudioGenerator({ content }) {
   const [selectedScript, setSelectedScript] = useState('youtube');
   const [audioUrl, setAudioUrl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingEngine, setLoadingEngine] = useState(null);
   const [error, setError] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [usedEngine, setUsedEngine] = useState(null);
   const audioRef = useRef(null);
 
   const getScriptText = () => {
@@ -18,21 +21,26 @@ export default function AudioGenerator({ content }) {
     return r ? `${r.hook}\n\n${r.script}\n\n${r.callToAction}` : '';
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (engine) => {
     const text = getScriptText();
     if (!text) return;
 
     setLoading(true);
+    setLoadingEngine(engine);
     setError(null);
     setAudioUrl(null);
 
     try {
-      const url = await generateNarration(text);
+      const url = engine === 'fish'
+        ? await generateNarrationFish(text)
+        : await generateNarrationOpenAI(text);
       setAudioUrl(url);
+      setUsedEngine(engine);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+      setLoadingEngine(null);
     }
   };
 
@@ -50,17 +58,19 @@ export default function AudioGenerator({ content }) {
     if (!audioUrl) return;
     const a = document.createElement('a');
     a.href = audioUrl;
-    a.download = `narracao-${selectedScript}-${Date.now()}.mp3`;
+    const ext = usedEngine === 'fish' ? 'wav' : 'mp3';
+    a.download = `narracao-${selectedScript}-${usedEngine}-${Date.now()}.${ext}`;
     a.click();
   };
 
   const scriptPreview = getScriptText();
+  const hfAvailable = hasHfApiKey();
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <h2 className="text-2xl font-bold text-cream">Gerador de Narração</h2>
       <p className="text-cream-muted text-sm">
-        Selecione o roteiro e gere a narração em áudio via OpenAI.
+        Selecione o roteiro e escolha o modelo de voz para gerar a narração.
       </p>
 
       {/* Script Selector */}
@@ -112,24 +122,51 @@ export default function AudioGenerator({ content }) {
         </div>
       )}
 
-      {/* Generate Button */}
-      <button
-        onClick={handleGenerate}
-        disabled={loading || !scriptPreview}
-        className="w-full py-4 rounded-xl bg-gradient-to-r from-allos-500 to-allos-600 text-cream font-semibold text-lg hover:from-allos-400 hover:to-allos-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-lg shadow-allos-500/20"
-      >
-        {loading ? (
-          <>
+      {/* Generate Buttons */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {/* OpenAI Button */}
+        <button
+          onClick={() => handleGenerate('openai')}
+          disabled={loading || !scriptPreview}
+          className="py-4 rounded-xl bg-gradient-to-r from-allos-600 to-allos-700 text-cream font-semibold hover:from-allos-500 hover:to-allos-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex flex-col items-center justify-center gap-1.5 shadow-lg shadow-allos-500/10 border border-allos-500/20"
+        >
+          {loadingEngine === 'openai' ? (
             <Loader2 className="w-5 h-5 animate-spin" />
-            Gerando narração...
-          </>
-        ) : (
-          <>
-            <Mic className="w-5 h-5" />
-            Gerar Narração
-          </>
-        )}
-      </button>
+          ) : (
+            <Sparkles className="w-5 h-5" />
+          )}
+          <span className="text-sm">
+            {loadingEngine === 'openai' ? 'Gerando...' : 'Gerar com OpenAI'}
+          </span>
+          <span className="text-[10px] text-cream-muted font-normal">
+            Voz Ash - TTS HD
+          </span>
+        </button>
+
+        {/* Fish Speech Button */}
+        <button
+          onClick={() => handleGenerate('fish')}
+          disabled={loading || !scriptPreview || !hfAvailable}
+          title={!hfAvailable ? 'Configure a chave do Hugging Face nas configurações (botão API Key)' : ''}
+          className={`py-4 rounded-xl font-semibold transition-all flex flex-col items-center justify-center gap-1.5 shadow-lg border ${
+            hfAvailable
+              ? 'bg-gradient-to-r from-gold-600 to-gold-500 text-allos-950 hover:from-gold-500 hover:to-gold-400 disabled:opacity-40 disabled:cursor-not-allowed shadow-gold-500/10 border-gold-500/30'
+              : 'bg-allos-900/30 text-cream-muted border-allos-800/30 cursor-not-allowed opacity-50'
+          }`}
+        >
+          {loadingEngine === 'fish' ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Fish className="w-5 h-5" />
+          )}
+          <span className="text-sm">
+            {loadingEngine === 'fish' ? 'Gerando...' : 'Gerar com Fish Speech'}
+          </span>
+          <span className={`text-[10px] font-normal ${hfAvailable ? 'text-allos-900/60' : 'text-cream-muted/50'}`}>
+            {hfAvailable ? 'Hugging Face - Voz natural' : 'Requer chave Hugging Face'}
+          </span>
+        </button>
+      </div>
 
       {/* Audio Player */}
       {audioUrl && (
@@ -154,6 +191,8 @@ export default function AudioGenerator({ content }) {
               <p className="text-cream font-medium">Narração gerada</p>
               <p className="text-cream-muted text-sm">
                 {selectedScript === 'youtube' ? 'Roteiro YouTube' : 'Roteiro Reels'}
+                {' — '}
+                {usedEngine === 'fish' ? 'Fish Speech' : 'OpenAI Ash'}
               </p>
             </div>
             <button
@@ -161,7 +200,7 @@ export default function AudioGenerator({ content }) {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500/15 text-gold-400 border border-gold-500/30 hover:bg-gold-500/25 transition-colors text-sm font-medium"
             >
               <Download className="w-4 h-4" />
-              Baixar MP3
+              Baixar
             </button>
           </div>
         </div>

@@ -6,7 +6,7 @@ import ScriptEditor from './components/ScriptEditor';
 import AudioGenerator from './components/AudioGenerator';
 import ApiKeySetup from './components/ApiKeySetup';
 import { callOpenAI } from './services/openai';
-import { hasApiKey, setApiKey, removeApiKey } from './services/apiKey';
+import { hasApiKey, setApiKey, removeApiKey, setHfApiKey, removeHfApiKey } from './services/apiKey';
 import { MIND_MAP_SYSTEM_PROMPT, buildMindMapUserPrompt } from './prompts/mindMapPrompt';
 import { CONTENT_SYSTEM_PROMPT, buildContentUserPrompt } from './prompts/contentPrompt';
 import logoFull from './assets/Logo.png';
@@ -28,13 +28,15 @@ export default function App() {
   const [mindMapData, setMindMapData] = useState(null);
   const [contentData, setContentData] = useState(null);
 
-  const handleSaveApiKey = (key) => {
-    setApiKey(key);
+  const handleSaveApiKey = (openaiKey, hfKey) => {
+    setApiKey(openaiKey);
+    if (hfKey) setHfApiKey(hfKey);
     setApiKeyReady(true);
   };
 
   const handleRemoveApiKey = () => {
     removeApiKey();
+    removeHfApiKey();
     setApiKeyReady(false);
   };
 
