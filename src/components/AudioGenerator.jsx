@@ -3,6 +3,25 @@ import { Mic, Download, Play, Pause, Loader2, Video, Film, Fish, Sparkles } from
 import { generateNarrationOpenAI, generateNarrationFish } from '../services/tts';
 import { hasFishApiKey } from '../services/apiKey';
 
+const OPENAI_VOICES = [
+  { id: 'alloy', label: 'Alloy (neutro, equilibrado)' },
+  { id: 'ash', label: 'Ash (confiante, articulado)' },
+  { id: 'coral', label: 'Coral (calorosa, expressiva)' },
+  { id: 'nova', label: 'Nova (jovem, animada)' },
+  { id: 'sage', label: 'Sage (professoral, reflexivo)' },
+  { id: 'shimmer', label: 'Shimmer (suave e calma)' },
+];
+
+const FISH_VOICES = [
+  { id: '', label: 'Voz padrão Fish' },
+  { id: '4744963f03b24efeb8e29b86aca419a0', label: 'Jair Bolsonaro' },
+  { id: '102bccca7dc64b6b8f8494c199c5d153', label: 'Capitão Nascimento' },
+  { id: '0889ee96fd82421b8ad9e126c4d73312', label: 'Iberê (Manual do Mundo)' },
+  { id: 'd339e19362fc42dc8e3f4a6be653ff83', label: 'Naruto' },
+  { id: 'dd4f0d11604541689cbb6c69de8067d9', label: 'Goku' },
+  { id: '0be16728414f4400bc287f13fea51eed', label: 'Lula' },
+];
+
 export default function AudioGenerator({ content }) {
   const [selectedScript, setSelectedScript] = useState('youtube');
   const [audioUrl, setAudioUrl] = useState(null);
@@ -11,16 +30,8 @@ export default function AudioGenerator({ content }) {
   const [error, setError] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [usedEngine, setUsedEngine] = useState(null);
-  const FISH_VOICES = [
-    { id: '', label: 'Voz padrão Fish' },
-    { id: '4744963f03b24efeb8e29b86aca419a0', label: 'Jair Bolsonaro' },
-    { id: '102bccca7dc64b6b8f8494c199c5d153', label: 'Capitão Nascimento' },
-    { id: '0889ee96fd82421b8ad9e126c4d73312', label: 'Iberê (Manual do Mundo)' },
-    { id: 'd339e19362fc42dc8e3f4a6be653ff83', label: 'Naruto' },
-    { id: 'dd4f0d11604541689cbb6c69de8067d9', label: 'Goku' },
-    { id: '0be16728414f4400bc287f13fea51eed', label: 'Lula' },
-  ];
-
+  const [usedVoiceLabel, setUsedVoiceLabel] = useState('');
+  const [openaiVoice, setOpenaiVoice] = useState('sage');
   const [fishVoiceId, setFishVoiceId] = useState('');
   const audioRef = useRef(null);
 
@@ -42,9 +53,14 @@ export default function AudioGenerator({ content }) {
     setAudioUrl(null);
 
     try {
-      const url = engine === 'fish'
-        ? await generateNarrationFish(text, fishVoiceId || null)
-        : await generateNarrationOpenAI(text);
+      let url;
+      if (engine === 'fish') {
+        url = await generateNarrationFish(text, fishVoiceId || null);
+        setUsedVoiceLabel(FISH_VOICES.find(v => v.id === fishVoiceId)?.label || 'Voz padrão');
+      } else {
+        url = await generateNarrationOpenAI(text, openaiVoice);
+        setUsedVoiceLabel(OPENAI_VOICES.find(v => v.id === openaiVoice)?.label || openaiVoice);
+      }
       setAudioUrl(url);
       setUsedEngine(engine);
     } catch (err) {
@@ -126,12 +142,35 @@ export default function AudioGenerator({ content }) {
         </p>
       </div>
 
+      {/* OpenAI Voice Selector */}
+      <div className="bg-allos-900/40 border border-allos-800/40 rounded-xl p-4">
+        <label className="flex items-center gap-2 text-xs font-semibold text-allos-300 uppercase tracking-wider mb-3">
+          <Sparkles className="w-3.5 h-3.5" />
+          Voz OpenAI
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {OPENAI_VOICES.map((voice) => (
+            <button
+              key={voice.id}
+              onClick={() => setOpenaiVoice(voice.id)}
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border text-left ${
+                openaiVoice === voice.id
+                  ? 'bg-allos-500/20 border-allos-500/50 text-allos-200'
+                  : 'bg-allos-900/50 border-allos-700/30 text-cream-muted hover:border-allos-500/30 hover:text-cream-dim'
+              }`}
+            >
+              {voice.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Fish Voice Selector */}
       {fishAvailable && (
         <div className="bg-allos-900/40 border border-allos-800/40 rounded-xl p-4">
           <label className="flex items-center gap-2 text-xs font-semibold text-gold-400 uppercase tracking-wider mb-3">
             <Fish className="w-3.5 h-3.5" />
-            Voz do Fish Audio
+            Voz Fish Audio
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {FISH_VOICES.map((voice) => (
@@ -174,7 +213,7 @@ export default function AudioGenerator({ content }) {
             {loadingEngine === 'openai' ? 'Gerando...' : 'Gerar com OpenAI'}
           </span>
           <span className="text-[10px] text-cream-muted font-normal">
-            Voz Ash — TTS HD
+            {OPENAI_VOICES.find(v => v.id === openaiVoice)?.label || openaiVoice}
           </span>
         </button>
 
@@ -199,7 +238,7 @@ export default function AudioGenerator({ content }) {
           </span>
           <span className={`text-[10px] font-normal ${fishAvailable ? 'text-allos-900/60' : 'text-cream-muted/50'}`}>
             {fishAvailable
-              ? `Speech 1.5 — ${FISH_VOICES.find(v => v.id === fishVoiceId)?.label || 'Voz padrão'}`
+              ? FISH_VOICES.find(v => v.id === fishVoiceId)?.label || 'Voz padrão'
               : 'Requer chave Fish Audio'}
           </span>
         </button>
@@ -229,7 +268,7 @@ export default function AudioGenerator({ content }) {
               <p className="text-cream-muted text-sm">
                 {selectedScript === 'youtube' ? 'Roteiro YouTube' : 'Roteiro Reels'}
                 {' — '}
-                {usedEngine === 'fish' ? 'Fish Audio' : 'OpenAI Ash'}
+                {usedVoiceLabel}
               </p>
             </div>
             <button

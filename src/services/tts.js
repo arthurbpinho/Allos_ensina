@@ -45,7 +45,7 @@ function splitText(text) {
 
 // ── OpenAI TTS ──
 
-async function openaiTtsRequest(input) {
+async function openaiTtsRequest(input, voice) {
   const response = await fetch(OPENAI_TTS_URL, {
     method: 'POST',
     headers: {
@@ -55,7 +55,7 @@ async function openaiTtsRequest(input) {
     body: JSON.stringify({
       model: 'tts-1-hd',
       input,
-      voice: 'ash',
+      voice,
       response_format: 'mp3',
       speed: 1.1,
     }),
@@ -69,11 +69,11 @@ async function openaiTtsRequest(input) {
   return response.blob();
 }
 
-export async function generateNarrationOpenAI(text) {
+export async function generateNarrationOpenAI(text, voice = 'sage') {
   const chunks = splitText(cleanText(text));
   const blobs = [];
   for (const chunk of chunks) {
-    blobs.push(await openaiTtsRequest(chunk));
+    blobs.push(await openaiTtsRequest(chunk, voice));
   }
   return URL.createObjectURL(new Blob(blobs, { type: 'audio/mpeg' }));
 }
