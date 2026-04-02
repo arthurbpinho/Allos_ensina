@@ -1,10 +1,6 @@
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+import { getApiKey } from './apiKey';
 
-function getApiKey() {
-  const key = import.meta.env.VITE_OPENAI_API_KEY;
-  if (!key) throw new Error('VITE_OPENAI_API_KEY não configurada no .env');
-  return key;
-}
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 export async function callOpenAI(systemPrompt, userPrompt) {
   const response = await fetch(OPENAI_API_URL, {

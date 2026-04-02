@@ -1,11 +1,7 @@
-const OPENAI_TTS_URL = 'https://api.openai.com/v1/audio/speech';
-const MAX_CHARS = 4000; // margem de segurança abaixo do limite de 4096
+import { getApiKey } from './apiKey';
 
-function getApiKey() {
-  const key = import.meta.env.VITE_OPENAI_API_KEY;
-  if (!key) throw new Error('VITE_OPENAI_API_KEY não configurada no .env');
-  return key;
-}
+const OPENAI_TTS_URL = 'https://api.openai.com/v1/audio/speech';
+const MAX_CHARS = 4000;
 
 function splitText(text) {
   if (text.length <= MAX_CHARS) return [text];
