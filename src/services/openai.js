@@ -57,7 +57,7 @@ export async function callOpenAI(systemPrompt, userPrompt) {
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.4,
-      max_completion_tokens: 65536,
+      max_completion_tokens: 16384,
       response_format: { type: 'json_object' },
     }),
   });
