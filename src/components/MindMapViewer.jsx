@@ -8,7 +8,8 @@ import {
   useEdgesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { ArrowRight, Loader2, Quote, BookOpen, X, ChevronDown, ChevronRight, FileText } from 'lucide-react';
+import { ArrowRight, Loader2, Quote, BookOpen, X, ChevronDown, ChevronRight, FileText, Download } from 'lucide-react';
+import { downloadMindMapHTML } from '../utils/exportMindMap';
 
 const NODE_COLORS = {
   central: { bg: '#008c8c', border: '#00b3b3', text: '#f4f3eb' },
@@ -473,7 +474,15 @@ export default function MindMapViewer({ data, onNext, hasContent, loading }) {
             {totalNodes} conceitos mapeados - clique em qualquer nó para expandir
           </p>
         </div>
-        <button
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => downloadMindMapHTML(data)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500/15 text-gold-400 border border-gold-500/30 hover:bg-gold-500/25 transition-colors text-sm font-medium"
+          >
+            <Download className="w-4 h-4" />
+            Baixar Mapa
+          </button>
+          <button
           onClick={onNext}
           disabled={!hasContent}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-allos-500 text-cream font-medium hover:bg-allos-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
@@ -490,6 +499,7 @@ export default function MindMapViewer({ data, onNext, hasContent, loading }) {
             </>
           )}
         </button>
+        </div>
       </div>
 
       {/* Epistemological Note */}
