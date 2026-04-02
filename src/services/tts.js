@@ -1,7 +1,7 @@
-import { getApiKey, getHfApiKey } from './apiKey';
+import { getApiKey, getFishApiKey } from './apiKey';
 
 const OPENAI_TTS_URL = 'https://api.openai.com/v1/audio/speech';
-const FISH_SPEECH_URL = 'https://router.huggingface.co/hf-inference/models/fishaudio/fish-speech-1.5';
+const FISH_TTS_URL = 'https://api.fish.audio/v1/tts';
 const MAX_CHARS = 4000;
 
 function cleanText(text) {
@@ -68,54 +68,59 @@ async function openaiTtsRequest(input) {
 
 export async function generateNarrationOpenAI(text) {
   const chunks = splitText(cleanText(text));
-
   const blobs = [];
   for (const chunk of chunks) {
-    const blob = await openaiTtsRequest(chunk);
-    blobs.push(blob);
+    blobs.push(await openaiTtsRequest(chunk));
   }
-
-  const combined = new Blob(blobs, { type: 'audio/mpeg' });
-  return URL.createObjectURL(combined);
+  return URL.createObjectURL(new Blob(blobs, { type: 'audio/mpeg' }));
 }
 
-// ── Fish Speech (Hugging Face) ──
+// ── Fish Audio TTS ──
 
-async function fishTtsRequest(input) {
-  const hfKey = getHfApiKey();
-  if (!hfKey) throw new Error('Chave do Hugging Face não configurada. Adicione nas configurações (botão API Key no header).');
+// Default voice: use null for Fish default, or set a reference_id
+// Users can browse voices at https://fish.audio and copy the model ID from the URL
+const FISH_DEFAULT_REFERENCE_ID = null;
 
-  const response = await fetch(FISH_SPEECH_URL, {
+async function fishTtsRequest(input, referenceId) {
+  const body = {
+    text: input,
+    format: 'mp3',
+    mp3_bitrate: 128,
+    normalize: true,
+    latency: 'normal',
+    prosody: {
+      speed: 1,
+      volume: 0,
+    },
+  };
+
+  if (referenceId) {
+    body.reference_id = referenceId;
+  }
+
+  const response = await fetch(FISH_TTS_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${hfKey}`,
+      'Authorization': `Bearer ${getFishApiKey()}`,
+      'model': 'speech-1.5',
     },
-    body: JSON.stringify({
-      inputs: input,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
-    if (response.status === 503) {
-      throw new Error('Modelo Fish Speech está carregando (cold start). Aguarde ~30s e tente novamente.');
-    }
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.error || `Fish Speech error: ${response.status}`);
+    throw new Error(error.message || error.detail || `Fish Audio error: ${response.status}`);
   }
 
   return response.blob();
 }
 
-export async function generateNarrationFish(text) {
+export async function generateNarrationFish(text, referenceId = FISH_DEFAULT_REFERENCE_ID) {
   const chunks = splitText(cleanText(text));
-
   const blobs = [];
   for (const chunk of chunks) {
-    const blob = await fishTtsRequest(chunk);
-    blobs.push(blob);
+    blobs.push(await fishTtsRequest(chunk, referenceId));
   }
-
-  const combined = new Blob(blobs, { type: 'audio/mpeg' });
-  return URL.createObjectURL(combined);
+  return URL.createObjectURL(new Blob(blobs, { type: 'audio/mpeg' }));
 }

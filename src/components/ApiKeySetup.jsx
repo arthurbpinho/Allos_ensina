@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { KeyRound, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
 import logoFull from '../assets/Logo.png';
-import { getHfApiKey } from '../services/apiKey';
+import { hasFishApiKey, getFishApiKey } from '../services/apiKey';
 
 export default function ApiKeySetup({ onSave }) {
   const [openaiKey, setOpenaiKey] = useState('');
-  const [hfKey, setHfKey] = useState(getHfApiKey());
+  const [fishKey, setFishKey] = useState(hasFishApiKey() ? getFishApiKey() : '');
   const [showOpenai, setShowOpenai] = useState(false);
-  const [showHf, setShowHf] = useState(false);
+  const [showFish, setShowFish] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (openaiKey.trim()) {
-      onSave(openaiKey.trim(), hfKey.trim());
+      onSave(openaiKey.trim(), fishKey.trim());
     }
   };
 
@@ -59,33 +59,33 @@ export default function ApiKeySetup({ onSave }) {
             </p>
           </div>
 
-          {/* HF Key */}
+          {/* Fish Audio Key */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-cream-dim mb-2">
               <KeyRound className="w-4 h-4 text-gold-500" />
-              Chave do Hugging Face
+              Chave do Fish Audio
               <span className="text-cream-muted text-xs">(opcional)</span>
             </label>
             <div className="relative">
               <input
-                type={showHf ? 'text' : 'password'}
-                value={hfKey}
-                onChange={(e) => setHfKey(e.target.value)}
-                placeholder="hf_..."
+                type={showFish ? 'text' : 'password'}
+                value={fishKey}
+                onChange={(e) => setFishKey(e.target.value)}
+                placeholder="sua-chave-fish-audio"
                 className="w-full bg-allos-900/60 border border-allos-700/40 rounded-xl px-4 py-3 pr-12 text-cream placeholder-cream-muted/40 focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500/50 text-sm font-mono"
               />
               <button
                 type="button"
-                onClick={() => setShowHf(!showHf)}
+                onClick={() => setShowFish(!showFish)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-cream-muted hover:text-cream transition-colors"
               >
-                {showHf ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showFish ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
             <p className="text-xs text-cream-muted/50 mt-1">
-              Necessária para narração com Fish Speech (voz mais natural).{' '}
-              <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-gold-400 underline">
-                Criar token
+              Para narração com Fish Speech (voz mais natural).{' '}
+              <a href="https://fish.audio/api" target="_blank" rel="noopener noreferrer" className="text-gold-400 underline">
+                Criar chave
               </a>
             </p>
           </div>

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Mic, Download, Play, Pause, Loader2, Video, Film, Fish, Sparkles } from 'lucide-react';
 import { generateNarrationOpenAI, generateNarrationFish } from '../services/tts';
-import { hasHfApiKey } from '../services/apiKey';
+import { hasFishApiKey } from '../services/apiKey';
 
 export default function AudioGenerator({ content }) {
   const [selectedScript, setSelectedScript] = useState('youtube');
@@ -11,6 +11,7 @@ export default function AudioGenerator({ content }) {
   const [error, setError] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [usedEngine, setUsedEngine] = useState(null);
+  const [fishVoiceId, setFishVoiceId] = useState('');
   const audioRef = useRef(null);
 
   const getScriptText = () => {
@@ -32,7 +33,7 @@ export default function AudioGenerator({ content }) {
 
     try {
       const url = engine === 'fish'
-        ? await generateNarrationFish(text)
+        ? await generateNarrationFish(text, fishVoiceId || null)
         : await generateNarrationOpenAI(text);
       setAudioUrl(url);
       setUsedEngine(engine);
@@ -58,13 +59,12 @@ export default function AudioGenerator({ content }) {
     if (!audioUrl) return;
     const a = document.createElement('a');
     a.href = audioUrl;
-    const ext = usedEngine === 'fish' ? 'wav' : 'mp3';
-    a.download = `narracao-${selectedScript}-${usedEngine}-${Date.now()}.${ext}`;
+    a.download = `narracao-${selectedScript}-${usedEngine}-${Date.now()}.mp3`;
     a.click();
   };
 
   const scriptPreview = getScriptText();
-  const hfAvailable = hasHfApiKey();
+  const fishAvailable = hasFishApiKey();
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -116,6 +116,30 @@ export default function AudioGenerator({ content }) {
         </p>
       </div>
 
+      {/* Fish Voice ID */}
+      {fishAvailable && (
+        <div className="bg-allos-900/40 border border-allos-800/40 rounded-xl p-4">
+          <label className="flex items-center gap-2 text-xs font-semibold text-gold-400 uppercase tracking-wider mb-2">
+            <Fish className="w-3.5 h-3.5" />
+            Voz do Fish Audio (opcional)
+          </label>
+          <input
+            type="text"
+            value={fishVoiceId}
+            onChange={(e) => setFishVoiceId(e.target.value)}
+            placeholder="Cole o ID da voz (ex: 7f92f8afb8ec43bf81429cc1c9199cb1)"
+            className="w-full bg-allos-900/60 border border-allos-700/30 rounded-lg px-3 py-2 text-cream placeholder-cream-muted/30 focus:outline-none focus:ring-1 focus:ring-gold-500/30 text-xs font-mono"
+          />
+          <p className="text-[10px] text-cream-muted/40 mt-1.5 leading-relaxed">
+            Acesse{' '}
+            <a href="https://fish.audio" target="_blank" rel="noopener noreferrer" className="text-gold-400/70 underline">
+              fish.audio
+            </a>
+            , escolha uma voz e copie o ID da URL. Deixe vazio para usar a voz padrão.
+          </p>
+        </div>
+      )}
+
       {error && (
         <div className="p-4 bg-red-900/20 border border-red-800/50 rounded-xl text-red-300 text-sm">
           <strong>Erro:</strong> {error}
@@ -139,17 +163,17 @@ export default function AudioGenerator({ content }) {
             {loadingEngine === 'openai' ? 'Gerando...' : 'Gerar com OpenAI'}
           </span>
           <span className="text-[10px] text-cream-muted font-normal">
-            Voz Ash - TTS HD
+            Voz Ash — TTS HD
           </span>
         </button>
 
-        {/* Fish Speech Button */}
+        {/* Fish Audio Button */}
         <button
           onClick={() => handleGenerate('fish')}
-          disabled={loading || !scriptPreview || !hfAvailable}
-          title={!hfAvailable ? 'Configure a chave do Hugging Face nas configurações (botão API Key)' : ''}
+          disabled={loading || !scriptPreview || !fishAvailable}
+          title={!fishAvailable ? 'Configure a chave do Fish Audio nas configurações (botão API Key)' : ''}
           className={`py-4 rounded-xl font-semibold transition-all flex flex-col items-center justify-center gap-1.5 shadow-lg border ${
-            hfAvailable
+            fishAvailable
               ? 'bg-gradient-to-r from-gold-600 to-gold-500 text-allos-950 hover:from-gold-500 hover:to-gold-400 disabled:opacity-40 disabled:cursor-not-allowed shadow-gold-500/10 border-gold-500/30'
               : 'bg-allos-900/30 text-cream-muted border-allos-800/30 cursor-not-allowed opacity-50'
           }`}
@@ -160,10 +184,12 @@ export default function AudioGenerator({ content }) {
             <Fish className="w-5 h-5" />
           )}
           <span className="text-sm">
-            {loadingEngine === 'fish' ? 'Gerando...' : 'Gerar com Fish Speech'}
+            {loadingEngine === 'fish' ? 'Gerando...' : 'Gerar com Fish Audio'}
           </span>
-          <span className={`text-[10px] font-normal ${hfAvailable ? 'text-allos-900/60' : 'text-cream-muted/50'}`}>
-            {hfAvailable ? 'Hugging Face - Voz natural' : 'Requer chave Hugging Face'}
+          <span className={`text-[10px] font-normal ${fishAvailable ? 'text-allos-900/60' : 'text-cream-muted/50'}`}>
+            {fishAvailable
+              ? fishVoiceId ? 'Voz personalizada' : 'Speech 1.5 — Voz padrão'
+              : 'Requer chave Fish Audio'}
           </span>
         </button>
       </div>
@@ -192,7 +218,7 @@ export default function AudioGenerator({ content }) {
               <p className="text-cream-muted text-sm">
                 {selectedScript === 'youtube' ? 'Roteiro YouTube' : 'Roteiro Reels'}
                 {' — '}
-                {usedEngine === 'fish' ? 'Fish Speech' : 'OpenAI Ash'}
+                {usedEngine === 'fish' ? 'Fish Audio' : 'OpenAI Ash'}
               </p>
             </div>
             <button

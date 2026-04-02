@@ -1,5 +1,5 @@
 const OPENAI_KEY = 'allos_openai_api_key';
-const HF_KEY = 'allos_hf_api_key';
+const FISH_KEY = 'allos_fish_api_key';
 
 // OpenAI
 export function getApiKey() {
@@ -20,19 +20,21 @@ export function hasApiKey() {
   return !!localStorage.getItem(OPENAI_KEY);
 }
 
-// Hugging Face
-export function getHfApiKey() {
-  return localStorage.getItem(HF_KEY) || '';
+// Fish Audio
+export function getFishApiKey() {
+  const key = localStorage.getItem(FISH_KEY);
+  if (!key) throw new Error('Chave do Fish Audio não configurada. Adicione nas configurações (botão API Key no header).');
+  return key;
 }
 
-export function setHfApiKey(key) {
-  localStorage.setItem(HF_KEY, key.trim());
+export function setFishApiKey(key) {
+  localStorage.setItem(FISH_KEY, key.trim());
 }
 
-export function removeHfApiKey() {
-  localStorage.removeItem(HF_KEY);
+export function removeFishApiKey() {
+  localStorage.removeItem(FISH_KEY);
 }
 
-export function hasHfApiKey() {
-  return !!localStorage.getItem(HF_KEY);
+export function hasFishApiKey() {
+  return !!localStorage.getItem(FISH_KEY);
 }
